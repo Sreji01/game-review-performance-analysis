@@ -76,11 +76,12 @@ CREATE TABLE IF NOT EXISTS platforms (
 );
 
 CREATE TABLE IF NOT EXISTS game_platforms (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     game_id BIGINT NOT NULL REFERENCES games (id) ON DELETE CASCADE,
     platform_id SMALLINT NOT NULL REFERENCES platforms (id),
     release_date DATE NOT NULL,
     price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
-    PRIMARY KEY (game_id, platform_id)
+    UNIQUE (game_id, platform_id)
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -105,11 +106,12 @@ CREATE TABLE IF NOT EXISTS reviews (
 );
 
 CREATE TABLE IF NOT EXISTS review_votes (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     review_id BIGINT NOT NULL REFERENCES reviews (id) ON DELETE CASCADE,
     user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     is_helpful BOOLEAN NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (review_id, user_id)
+    UNIQUE (review_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -126,12 +128,13 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 CREATE TABLE IF NOT EXISTS order_items (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_id BIGINT NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
     game_id BIGINT NOT NULL,
     platform_id SMALLINT NOT NULL,
     unit_price NUMERIC(10, 2) NOT NULL CHECK (unit_price >= 0),
     discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (discount_amount >= 0),
-    PRIMARY KEY (order_id, game_id, platform_id),
+    UNIQUE (order_id, game_id, platform_id),
     CONSTRAINT fk_order_items_game_platform
         FOREIGN KEY (game_id, platform_id)
         REFERENCES game_platforms (game_id, platform_id),
@@ -139,8 +142,9 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 CREATE TABLE IF NOT EXISTS wishlists (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     game_id BIGINT NOT NULL REFERENCES games (id) ON DELETE CASCADE,
     added_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, game_id)
+    UNIQUE (user_id, game_id)
 );
