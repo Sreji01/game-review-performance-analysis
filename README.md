@@ -50,7 +50,9 @@ Spring Boot deo projekta sadrži JPA entitete koji odgovaraju normalizovanoj še
     ├── 11_create_denormalized_schema.sql
     ├── 12_denormalized_benchmark_queries.sql
     ├── 13_benchmark_results_schema.sql
-    └── 14_benchmark_results_report.sql
+    ├── 14_benchmark_results_report.sql
+    ├── 15_insert_measured_benchmark_results.sql
+    └── 16_export_benchmark_results_csv.sql
 ```
 
 ## Domen sistema
@@ -264,6 +266,13 @@ psql -h localhost -d game_marketplace_analytics \
 
 Fragmentacija nije zamišljena kao univerzalno ubrzanje svih upita. Njena prednost se vidi kada upit može da koristi samo potreban deo podataka, na primer određeni skup kolona ili recenzije iz jedne godine.
 
+Zbog toga skripta za fragmentaciju koristi parove upita:
+
+- `F1-N` i `F1-F` porede analizu recenzija iz 2024. godine nad normalizovanom tabelom `normalized.reviews` i horizontalnim fragmentom `fragmented.reviews_2024`
+- `F2-N` i `F2-F` porede čitanje poslednjih recenzija jednog korisnika u 2024. godini nad normalizovanom tabelom i horizontalnim fragmentom
+- `F3-N` i `F3-F` porede čitanje osnovnih korisničkih podataka nad celom tabelom `normalized.users` i vertikalnim fragmentom `fragmented.users_basic`
+- `F4-F` prikazuje broj redova po horizontalnim fragmentima recenzija
+
 ## Denormalizacija
 
 Denormalizovana šema se kreira skriptom:
@@ -300,6 +309,14 @@ psql -h localhost -d game_marketplace_analytics \
 
 Denormalizacija je korisna za analitičke upite jer smanjuje broj `JOIN` operacija i izbegava ponovno računanje agregacija. Glavna mana je potreba za održavanjem konzistentnosti redundantnih podataka.
 
+Skripta za denormalizaciju takođe koristi direktne parove upita:
+
+- `D1-N` i `D1-D` porede prikaz najbolje ocenjenih igara preko normalizovanih `JOIN` operacija i preko denormalizovane tabele `denormalized.game_statistics`
+- `D2-N` i `D2-D` porede izračunavanje prihoda po igri nad normalizovanom i denormalizovanom strukturom
+- `D3-N` i `D3-D` porede performanse developera kada se agregacije računaju iz osnovnih tabela i kada se čitaju iz unapred pripremljene denormalizovane tabele
+
+Ova poređenja su korisna za dokumentaciju zato što oba upita u paru vraćaju isti tip rezultata, ali koriste drugačiju fizičku ili logičku organizaciju podataka.
+
 ## Čuvanje benchmark rezultata
 
 Za čuvanje rezultata merenja koristi se posebna šema `benchmark`.
@@ -326,6 +343,28 @@ psql -h localhost -d game_marketplace_analytics \
 ```
 
 Ova skripta prikazuje pregled izvršenih merenja, prosečna vremena izvršavanja i poređenja između normalizovane, indeksirane, fragmentisane i denormalizovane varijante.
+
+Unos izmerenih rezultata iz projekta:
+
+```bash
+psql -h localhost -d game_marketplace_analytics \
+  -v ON_ERROR_STOP=1 \
+  -f sql/15_insert_measured_benchmark_results.sql
+```
+
+Export rezultata u CSV fajlove:
+
+```bash
+psql -h localhost -d game_marketplace_analytics \
+  -v ON_ERROR_STOP=1 \
+  -f sql/16_export_benchmark_results_csv.sql
+```
+
+Export skripta pravi folder `exports` i generiše:
+
+- `exports/benchmark_query_results.csv`
+- `exports/benchmark_index_comparison.csv`
+- `exports/benchmark_optimized_variants.csv`
 
 ## Preporučeni redosled pokretanja
 
